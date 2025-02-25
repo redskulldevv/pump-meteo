@@ -1,0 +1,75 @@
+[0mYou tried to use a type which doesn't implement some trait in a place which[0m [0mexpected that trait.[0m
+
+[0mErroneous code example:[0m
+
+[0m[0m[2m// here we declare the Foo trait with a bar method
+trait Foo {
+    fn bar(&self);
+}
+
+// we now declare a function which takes an object implementing the Foo trait
+fn some_func<T: Foo>(foo: T) {
+    foo.bar();
+}
+
+fn main() {
+    // we now call the method with the i32 type, which doesn't implement
+    // the Foo trait
+    some_func(5i32); // error: the trait bound `i32 : Foo` is not satisfied
+}[0m
+
+[0mIn order to fix this error, verify that the type you're using does implement[0m [0mthe trait. Example:[0m
+
+[0m[0m[2mtrait Foo {
+    fn bar(&self);
+}
+
+// we implement the trait on the i32 type
+impl Foo for i32 {
+    fn bar(&self) {}
+}
+
+fn some_func<T: Foo>(foo: T) {
+    foo.bar(); // we can now use this method since i32 implements the
+               // Foo trait
+}
+
+fn main() {
+    some_func(5i32); // ok!
+}[0m
+
+[0mOr in a generic context, an erroneous code example would look like:[0m
+
+[0m[0m[2mfn some_func<T>(foo: T) {
+    println!("{:?}", foo); // error: the trait `core::fmt::Debug` is not
+                           //        implemented for the type `T`
+}
+
+fn main() {
+    // We now call the method with the i32 type,
+    // which *does* implement the Debug trait.
+    some_func(5i32);
+}[0m
+
+[0mNote that the error here is in the definition of the generic function. Although[0m [0mwe only call it with a parameter that does implement [0m[0m[2mDebug[0m,
+the compiler[0m [0mstill rejects the function. It must work with all possible input types. In[0m [0morder to make this example compile, we need to
+restrict the generic type we're[0m [0maccepting:[0m
+
+[0m[0m[2muse std::fmt;
+
+// Restrict the input type to types that implement Debug.
+fn some_func<T: fmt::Debug>(foo: T) {
+    println!("{:?}", foo);
+}
+
+fn main() {
+    // Calling the method is still fine, as i32 implements Debug.
+    some_func(5i32);
+
+    // This would fail to compile now:
+    // struct WithoutDebug;
+    // some_func(WithoutDebug);
+}[0m
+
+[0mRust only looks at the signature of the called function, as such it must[0m [0malready specify all requirements that will be used for every type
+parameter.[0m[0m
